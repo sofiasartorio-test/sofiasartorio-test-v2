@@ -1,0 +1,187 @@
+{{ define "main" }}
+
+<h1 class="page-title">📝 Master thesis</h1>
+<style>
+.page-title {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 3rem;
+  font-weight: 700;
+}
+</style>
+
+<p class="page-description">
+  Here you can find a collection of master's theses.
+  If you are interested in any of these works or would like further information,
+  please feel free to contact us.
+</p>
+
+<!-- SEARCH BAR -->
+<div style="max-width:600px; margin:0 auto 2rem auto;">
+  <input
+    type="text"
+    id="searchInput"
+    placeholder="Search by title, author, topic, year..."
+    style="
+      width:100%;
+      padding:0.7rem 1rem;
+      font-size:1rem;
+      border:1px solid #ccc;
+      border-radius:999px;
+      outline:none;
+    "
+  >
+</div>
+
+<!-- PUBLICATIONS LIST -->
+<div class="pub-list">
+  {{ range sort .Pages "Params.year" "desc" }}
+    <div class="pub-item"
+         data-search="{{ lower (printf "%s %s %v %v" .Title (delimit .Params.authors " ") .Params.topics .Params.year) }}">
+
+      <span class="pub-title">
+        {{ .Title }}
+      </span>
+
+      <!-- META -->
+      <div class="pub-meta">
+
+        {{/* AUTORI CLICCABILI */}}
+        {{ $authors := .Params.authors }}
+
+        {{ if reflect.IsSlice $authors }}
+          {{ range $i, $author := $authors }}
+            {{ if gt $i 0 }}, {{ end }}
+
+            {{ $parts := split (strings.TrimSpace $author) " " }}
+            {{ $surnameStart := sub (len $parts) 1 }}
+
+            {{/* Gestione dei cognomi composti con particelle */}}
+            {{ if ge (len $parts) 2 }}
+              {{ $lastPart := lower (index $parts (sub (len $parts) 1)) }}
+              {{ $previousPart := lower (index $parts (sub (len $parts) 2)) }}
+
+              {{ if in (slice "van" "von" "de" "del" "della" "der" "den" "da" "di" "du" "la" "le") $previousPart }}
+                {{ $surnameStart = sub (len $parts) 2 }}
+              {{ end }}
+
+              {{ if and (ge (len $parts) 3) (in (slice "van" "von" "de" "del" "della" "der" "den" "da" "di" "du" "la" "le") (lower (index $parts (sub (len $parts) 3)))) (in (slice "der" "den" "la" "le") $previousPart) }}
+                {{ $surnameStart = sub (len $parts) 3 }}
+              {{ end }}
+           {{ end }}
+        
+
+          {{/* Crea le iniziali */}}
+          {{ $initials := slice }}
+          {{ range $j, $part := $parts }}
+            {{ if lt $j $surnameStart }}
+              {{ $initials = $initials | append (printf "%s." (upper (substr $part 0 1))) }}
+            {{ end }}
+          {{ end }}
+
+          {{/* Ricompone il cognome, incluse eventuali particelle */}}
+          {{ $surnameParts := slice }}
+          {{ range $j, $part := $parts }}
+            {{ if ge $j $surnameStart }}
+              {{ $surnameParts = $surnameParts | append $part }}
+            {{ end }}
+          {{ end }}
+
+          {{ $displayName := printf "%s %s" (delimit $initials "") (delimit $surnameParts " ") }}
+
+          {{/* Cerca il profilo autore confrontando l'ultima parte dello slug */}}
+          {{ $surnameSlug := urlize (delimit $surnameParts " ") }}
+          {{ $authorPage := false }}
+
+          {{ range site.RegularPages }}
+            {{ if and (eq .Section "authors") .File }}
+              {{ $slugParts := split .File.ContentBaseName "-" }}
+              {{ if eq (index $slugParts (sub (len $slugParts) 1)) $surnameSlug }}
+                {{ $authorPage = . }}
+              {{ end }}
+            {{ end }}
+          {{ end }}
+
+         {{ with $authorPage }}
+          <a href="{{ .RelPermalink }}">{{ $displayName }}</a>
+         {{ else }}
+          {{ $displayName }}
+         {{ end }}
+          {{ end }}
+         
+         {{ else }}
+          {{ $authors }}
+         {{ end }}
+
+        ({{ .Params.year }})
+
+        {{ with .Params.pdf }}
+          – <a href="{{ . }}" target="_blank">PDF</a>
+        {{ end }}
+
+        {{ with .Params.doi }}
+          – <a href="{{ printf "https://doi.org/%s" . }}" target="_blank" rel="noopener">DOI</a>
+        {{ end }}
+
+        {{ with .Resources.GetMatch "cite.bib" }}
+          – <a href="{{ .RelPermalink }}" target="_blank">BibTeX</a>
+        {{ end }}
+
+      </div>
+    </div>
+  {{ end }}
+</div>
+
+<!-- STYLE -->
+<style>
+.pub-list {
+  max-width: 800px;
+  margin: auto;
+}
+
+.pub-item {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.pub-title {
+  font-weight: 500;
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.pub-title:hover {
+  text-decoration: underline;
+}
+
+.pub-meta {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.pub-meta a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.pub-meta a:hover {
+  text-decoration: underline;
+}
+</style>
+
+<!-- SEARCH SCRIPT -->
+<script>
+const input = document.getElementById('searchInput');
+const items = document.querySelectorAll('.pub-item');
+
+input.addEventListener('input', () => {
+  const query = input.value.toLowerCase();
+
+  items.forEach(item => {
+    const text = item.dataset.search;
+    item.style.display = text.includes(query) ? 'block' : 'none';
+  });
+});
+</script>
+
+{{ end }}
