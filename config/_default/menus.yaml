@@ -16,7 +16,7 @@ main:
   - name: 📄 Publications
     url: /publications/
     weight: 13
-  - name: 📄 Master thesis
+  - name: 📝 Master thesis
     url: /thesis/
     weight: 14
   - name: 📂 Projects & Collaborations
