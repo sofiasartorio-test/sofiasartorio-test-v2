@@ -115,8 +115,8 @@ jobs:
         if: always()
         run: |
           if [ "${{ job.status }}" == "success" ]; then
-            echo "🎉 Workflow completed successfully"
+            echo "Workflow completed successfully"
           else
-            echo "❌ Workflow failed - check logs for details"
+            echo "Workflow failed - check logs for details"
             exit 1
           fi
